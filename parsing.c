@@ -33,6 +33,47 @@ t_tree *parsepipeline(char **buf)
 	return (tree);
 }
 
+void	expand(char **cmd)
+{
+	char	*end;
+
+	(*cmd) ++;
+	end = (*cmd);
+	while (
+}
+
+void	applyexp(char **cmd, int type)
+{
+	if (type == '\'')
+		return ;
+	while (**cmd)
+	{
+		if (**cmd == '$')
+			expand(cmd);
+		(*cmd) ++;
+	}
+}
+
+void	cmdandredir(t_tree *tree, t_cmdtree *cmdtree, char **buf)
+{
+	int	i;
+	int	tok;
+	char	*sarg;
+	char	*earg;
+
+	i = 0;
+	while (!match(buf, "|"))
+	{
+		tok = consume(buf, &sarg, &earg);
+		if (!tok)
+			break;
+		cmdtree -> cmd[i] = applyexp(&getstr(sarg, earg), tok);
+		i++;
+		tree = parseredir(buf, tree);
+	}
+	cmdtree -> cmd[i] = NULL;
+}
+
 t_tree	*parsecmd(char **buf)
 {
 	t_tree	*tree;
@@ -110,52 +151,10 @@ void	printtree(t_tree *tree)
 }
 
 
-static void indent(int depth)
-{
-    while (depth--) putchar(' ');
-}
-
-static void printtree_rec(const t_tree *tree, int depth)
-{
-    if (!tree) return;
-
-    switch (tree->type)
-    {
-    case 'w': {                     /* simple command            */
-        const t_cmdtree *cmd = (const t_cmdtree *)tree;
-        indent(depth);
-        printf("CMD");
-        for (int i = 0; cmd->cmd[i]; ++i)
-            printf(" %s", cmd->cmd[i]);
-        putchar('\n');
-        break;
-    }
-    case '|': {                     /* pipeline                  */
-        const t_pipetree *p = (const t_pipetree *)tree;
-        indent(depth);
-        puts("PIPE");
-        printtree_rec(p->left,  depth + 2);
-        printtree_rec(p->right, depth + 2);
-        break;
-    }
-    case '>': case '<': case 'a':   /* >  <  >> (append) << (heredoc) */
-    case 'h': {                     /* assume 'h' = heredoc id   */
-        const t_redirtree *r = (const t_redirtree *)tree;
-        indent(depth);
-        printf("REDIR(%c) %s\n", tree->type, r->file_name);
-        printtree_rec(r->cmd, depth + 2);
-        break;
-    }
-    default:
-        indent(depth);
-        printf("UNKNOWN(%d)\n", tree->type);
-    }
-}
-
-
 int main()
 {
-	char *buff = "< file1 cat > file2 |grep ok > outfile | cat -e > secondout";
+	//char *buff = "< file1 cat > file2 |\"grep ok\" > outfile | cat -e > secondout";
+	char *buff = "\" | grep ok > aa \" | cat";
 	t_tree *result = parseprogram(&buff);
-	printtree_rec(result, 0);
+	printtree(result);
 }
