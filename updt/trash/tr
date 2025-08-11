@@ -1,0 +1,98 @@
+Program
+    : CommandChain EOF
+    ;
+
+CommandChain
+    : Pipeline CommandChainPrime
+    ;
+
+CommandChainPrime
+    : AND Pipeline CommandChainPrime
+    | OR  Pipeline CommandChainPrime
+    | ε
+    ;
+
+Pipeline
+    : SimpleOrSubshell PipelinePrime
+    ;
+
+PipelinePrime
+    : PIPE SimpleOrSubshell PipelinePrime
+    | ε
+    ;
+
+SimpleOrSubshell
+    : Subshell
+    | SimpleCommand
+    ;
+
+Subshell
+    : LP CommandChain RP
+    ;
+
+SimpleCommand
+    : ComponentList
+    ;
+
+ComponentList
+    : Component ComponentListTail
+    ;
+
+ComponentListTail
+    : Component ComponentListTail
+    | ε
+    ;
+
+Component
+    : WordElement
+    | Redirection
+    ;
+
+WordElement
+    : WORD
+    | SINGLE_QUOTED
+    | DoubleQuoted
+    | VarExpansion
+    | CommandSubst
+    ;
+
+DoubleQuoted
+    : DOUBLE_QUOTED_START DQContent DOUBLE_QUOTED_END
+    ;
+
+DQContent
+    : DQItem DQContent
+    | ε
+    ;
+
+DQItem
+    : TEXT_NO_DOLLAR_OR_QUOTE      /* raw characters inside double quotes except $ and " */
+    | VarExpansion
+    | CommandSubst
+    ;
+
+VarExpansion
+    : DOLLAR VAR_NAME
+    ;
+
+CommandSubst
+    : DOLLAR LP CommandChain RP
+    ;
+
+Redirection
+    : LT Filename
+    | GT Filename
+    | APPEND Filename
+    | HEREDOC HereEnd
+    ;
+
+Filename
+    : WORD
+    | SINGLE_QUOTED
+    | DoubleQuoted
+    ;
+
+HereEnd
+    : WORD
+    ;
+
